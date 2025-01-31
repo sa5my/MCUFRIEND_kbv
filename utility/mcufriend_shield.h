@@ -95,6 +95,47 @@
 #define PIN_HIGH(p, b)       (p) |= (1<<(b))
 #define PIN_OUTPUT(p, b)     *(&p-1) |= (1<<(b))
 
+//################################### RA4M1 UNO WIFI R4 ##############################
+#elif defined(ARDUINO_UNOR4_WIFI)  // UNO WIFI R4 on R4MA1
+
+//LCD pins  |D7  |D6  |D5   |D4  |D3  |D2  |D1  |D0 | |RD   |WR  |RS |CS   |RST|
+//R4  pins  |P112|P111|P107|P106|P105|P104|P303|P304| |P014|P000|P001|P002|P101|
+
+#define RD_PORT R_PORT0
+#define RD_PIN  14
+#define WR_PORT R_PORT0
+#define WR_PIN  0
+#define CD_PORT R_PORT0
+#define CD_PIN  1
+#define CS_PORT R_PORT0
+#define CS_PIN  2
+#define RESET_PORT R_PORT1
+#define RESET_PIN  1
+
+#define PORT1MASK         (0x18F0)
+#define PORT3MASK         (0x18)
+
+#define write_8(x)    { \
+        R_PORT3->PORR = PORT3MASK; \
+        R_PORT1->PORR = PORT1MASK; \
+        R_PORT3->POSR = ((x & 0x01) << 4) | ((x & 0x02) << 2); \
+        R_PORT1->POSR = ((x & 0x3C) << 2) | ((x & 0xC0) << 5); \
+                       }
+
+#define read_8()      ((R_PORT3->PIDR & 0x10) >> 4) | ((R_PORT3->PIDR & 0x08) >> 2) | \
+                      ((R_PORT1->PIDR & 0xF0) >> 2) | ((R_PORT1->PIDR & 0x1800) >> 5)
+
+#define setWriteDir()  { R_PORT3->PDR |= PORT3MASK;  R_PORT1->PDR |= PORT1MASK; }
+#define setReadDir()   { R_PORT3->PDR &= ~PORT3MASK; R_PORT1->PDR &= ~PORT1MASK; }
+#define write8(x)      { write_8(x); WR_STROBE; }
+#define write16(x)     { uint8_t h = (x)>>8, l = x; write8(h); write8(l); }
+#define READ_8(dst)    { RD_STROBE; dst = read_8(); RD_IDLE; }
+#define READ_16(dst)   { uint8_t hi; READ_8(hi); READ_8(dst); dst |= (hi << 8); }
+
+#define PIN_LOW(p, b)        p->PORR |= (1<<(b))
+#define PIN_HIGH(p, b)       p->POSR |= (1<<(b))
+#define PIN_OUTPUT(p, b)     p->PDR  |= (1<<(b))
+
 //################################### MEGA4809 NANO_EVERY  4808 ##############################
 #elif defined(__AVR_ATmega4808__)   // Thinary EVERY-4808 with Nano-Shield_Adapter
 #warning EVERY-4808 with Nano-Shield_Adapter
